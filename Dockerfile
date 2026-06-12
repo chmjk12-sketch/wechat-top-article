@@ -4,7 +4,7 @@ WORKDIR /app
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend/ .
-RUN npm run build
+RUN npx vite build
 
 # 阶段2: 运行后端 + 静态文件
 FROM node:22-alpine
@@ -23,10 +23,6 @@ EXPOSE 80
 # 环境变量
 ENV PORT=80
 ENV NODE_ENV=production
-
-# 健康检查
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:80/health', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"
 
 # 启动
 CMD ["node", "server.js"]
