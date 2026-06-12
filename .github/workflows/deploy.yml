@@ -44,32 +44,21 @@ jobs:
 
             # 追加微信 API 代理到 Caddyfile（如果还没有的话）
             if ! grep -q '/wechat-api' /etc/caddy/Caddyfile 2>/dev/null; then
-              cat >> /etc/caddy/Caddyfile << 'CADDYEOF'
-
-    # ---------- 微信公众号 API 代理 ----------
-    chmjk67.top {
-        route /wechat-api/* {
-            uri strip_prefix /wechat-api
-            reverse_proxy https://api.weixin.qq.com {
-                header_up Host api.weixin.qq.com
-            }
-        }
-    }
-CADDYEOF
-              echo "✅ Caddy WeChat proxy route added"
+              printf '\n# ---------- 微信公众号 API 代理 ----------\nchmjk67.top {\n    route /wechat-api/* {\n        uri strip_prefix /wechat-api\n        reverse_proxy https://api.weixin.qq.com {\n            header_up Host api.weixin.qq.com\n        }\n    }\n}\n' >> /etc/caddy/Caddyfile
+              echo "Caddy WeChat proxy route added"
             else
-              echo "✅ Caddy WeChat proxy route already exists"
+              echo "Caddy WeChat proxy route already exists"
             fi
 
             systemctl enable caddy 2>/dev/null
             systemctl reload caddy 2>&1
-            echo "✅ Caddy configured and reloaded"
+            echo "Caddy configured and reloaded"
 
             # 验证
             echo "--- Verifying WeChat proxy ---"
             curl -s "http://localhost/wechat-api/cgi-bin/token?grant_type=client_credential&appid=wxb06b265a34dda1a4&secret=b9d5a602da99766b6cda972f0ab13cef" | head -c 200
             echo ""
-            echo "✅ Caddy setup complete"
+            echo "Caddy setup complete"
 
       - name: Deploy app to ECS
         uses: appleboy/ssh-action@v1
