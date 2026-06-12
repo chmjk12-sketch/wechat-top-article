@@ -7,9 +7,13 @@ RUN npx vite build
 
 FROM node:22-alpine
 WORKDIR /app
-COPY backend/server.js ./server.js
-COPY backend/article_forge.db.json* ./article_forge.db.json*
+
+# 后端
+COPY work/server.js ./server.js
+
+# 前端构建产物（server.js 期望在 /frontend/dist）
 COPY --from=builder /app/dist /frontend/dist
+
 EXPOSE 80
 ENV PORT=80
 ENV NODE_ENV=production
