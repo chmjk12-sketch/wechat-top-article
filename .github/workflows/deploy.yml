@@ -1,0 +1,80 @@
+name: Build and Deploy to ECS
+
+on:
+  push:
+    branches: [main]
+
+env:
+  ACR_REGISTRY: crpi-2hhvyuuzflfxsyey.cn-beijing.personal.cr.aliyuncs.com
+  ACR_NAMESPACE: chmjk67
+  IMAGE_NAME: wechat-top-article
+  ECS_HOST: 39.105.86.184
+  ECS_USER: root
+  CONTAINER_NAME: wechat-top-article
+  CONTAINER_PORT: 8000
+  HOST_PORT: 8003
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Login to ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ACR_REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t ${{ env.ACR_REGISTRY }}/${{ env.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest .
+          docker push ${{ env.ACR_REGISTRY }}/${{ env.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Deploy to ECS via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ env.ECS_HOST }}
+          username: ${{ env.ECS_USER }}
+          key: ${{ secrets.ECS_SSH_KEY }}
+          script: |
+            # Login to ACR
+            docker login ${{ env.ACR_REGISTRY }} -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
+
+            # Pull latest image
+            docker pull ${{ env.ACR_REGISTRY }}/${{ env.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest
+
+            # Stop and remove old container
+            docker stop ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+            docker rm ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+
+            # Run new container
+            docker run -d \
+              --name ${{ env.CONTAINER_NAME }} \
+              --restart unless-stopped \
+              -p ${{ env.HOST_PORT }}:${{ env.CONTAINER_PORT }} \
+              -v /data/wechat-top-article/db:/app/article_forge.db.json \
+              ${{ env.ACR_REGISTRY }}/${{ env.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest
+
+            # Clean up old images
+            docker image prune -f
+
+            echo "✅ Deployed wechat-top-article on port ${{ env.HOST_PORT }}"
