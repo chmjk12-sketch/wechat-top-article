@@ -71,6 +71,9 @@ jobs:
               --name ${{ env.CONTAINER_NAME }} \
               --restart unless-stopped \
               -p ${{ env.HOST_PORT }}:${{ env.CONTAINER_PORT }} \
+              -e WECHAT_APPID=${{ secrets.WECHAT_APPID }} \
+              -e WECHAT_APPSECRET=${{ secrets.WECHAT_APPSECRET }} \
+              -e WECHAT_PROXY_KEY=${{ secrets.WECHAT_PROXY_KEY }} \
               -v /data/wechat-top-article/db:/app/article_forge.db.json \
               ${{ env.ACR_REGISTRY }}/${{ env.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest
 

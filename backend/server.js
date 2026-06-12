@@ -34,6 +34,9 @@ function saveDB() {
   fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
 }
 
+// ========== WeChat 代理 ==========
+const wechatProxy = require('./wechat-proxy');
+
 // ========== MIME 类型 ==========
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -380,6 +383,11 @@ const server = http.createServer((req, res) => {
         res.end();
       }
       return;
+    }
+
+    // ========== WeChat API 代理 ==========
+    if (url.pathname.startsWith('/api/wechat/')) {
+      return wechatProxy.handleWechatProxy(req, res, body);
     }
 
     // ========== 静态文件服务 ==========

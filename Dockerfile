@@ -4,6 +4,7 @@ WORKDIR /app
 
 # 复制后端代码
 COPY backend/server.js ./server.js
+COPY backend/wechat-proxy.js ./wechat-proxy.js
 COPY backend/article_forge.db.json* ./article_forge.db.json*
 
 # 复制前端构建产物
