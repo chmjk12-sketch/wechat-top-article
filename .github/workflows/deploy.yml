@@ -26,7 +26,52 @@ jobs:
           tags: |
             ${{ env.REGISTRY_URL }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.APP_NAME }}:latest
             ${{ env.REGISTRY_URL }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.APP_NAME }}:${{ github.sha }}
-      - name: Deploy to ECS
+      - name: Setup Caddy WeChat proxy on ECS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ env.ECS_IP }}
+          username: root
+          key: ${{ secrets.ECS_SSH_KEY }}
+          script: |
+            # 安装 Caddy（如已安装则跳过）
+            if ! command -v caddy &>/dev/null; then
+              apt-get update -qq
+              apt-get install -y -qq debian-keyring debian-archive-keyring apt-transport-https
+              curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+              curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list
+              apt-get update -qq && apt-get install -y -qq caddy
+            fi
+
+            # 追加微信 API 代理到 Caddyfile（如果还没有的话）
+            if ! grep -q '/wechat-api' /etc/caddy/Caddyfile 2>/dev/null; then
+              cat >> /etc/caddy/Caddyfile << 'CADDYEOF'
+
+    # ---------- 微信公众号 API 代理 ----------
+    chmjk67.top {
+        route /wechat-api/* {
+            uri strip_prefix /wechat-api
+            reverse_proxy https://api.weixin.qq.com {
+                header_up Host api.weixin.qq.com
+            }
+        }
+    }
+CADDYEOF
+              echo "✅ Caddy WeChat proxy route added"
+            else
+              echo "✅ Caddy WeChat proxy route already exists"
+            fi
+
+            systemctl enable caddy 2>/dev/null
+            systemctl reload caddy 2>&1
+            echo "✅ Caddy configured and reloaded"
+
+            # 验证
+            echo "--- Verifying WeChat proxy ---"
+            curl -s "http://localhost/wechat-api/cgi-bin/token?grant_type=client_credential&appid=wxb06b265a34dda1a4&secret=b9d5a602da99766b6cda972f0ab13cef" | head -c 200
+            echo ""
+            echo "✅ Caddy setup complete"
+
+      - name: Deploy app to ECS
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ env.ECS_IP }}
