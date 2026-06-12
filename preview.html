@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>推文工坊 · ArticleForge - 预览</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif; background: #f7f8fa; color: #333; }
+  .header { background: #fff; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 56px; }
+  .header h1 { font-size: 18px; color: #534AB7; font-weight: 600; }
+  .header button { background: none; border: 1px solid #d9d9d9; border-radius: 6px; padding: 6px 16px; cursor: pointer; font-size: 14px; color: #666; }
+  .header button:hover { border-color: #534AB7; color: #534AB7; }
+  .content { padding: 16px 24px; }
+  .config-panel { background: #fff; border-radius: 8px; padding: 16px 20px; margin-bottom: 12px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; border: 1px solid #f0f0f0; }
+  .config-panel label { font-size: 13px; color: #999; margin-right: 4px; }
+  .config-panel select { padding: 6px 12px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 14px; }
+  .config-panel .btn-start { margin-left: auto; background: #534AB7; color: #fff; border: none; border-radius: 6px; padding: 8px 28px; font-size: 15px; cursor: pointer; font-weight: 500; }
+  .config-panel .btn-start:hover { background: #3d358a; }
+  .step-panel { background: #fff; border-radius: 8px; padding: 14px 20px; margin-bottom: 12px; display: flex; align-items: center; gap: 24px; border: 1px solid #f0f0f0; }
+  .step { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #bbb; }
+  .step.active { color: #534AB7; font-weight: 600; }
+  .step.done { color: #52c41a; }
+  .step .dot { width: 22px; height: 22px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #bbb; }
+  .step.active .dot { background: #534AB7; color: #fff; }
+  .step.done .dot { background: #52c41a; color: #fff; }
+  .step .arrow { color: #e0e0e0; font-size: 16px; }
+  .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; height: calc(100vh - 260px); min-height: 480px; }
+  .panel { background: #fff; border-radius: 8px; border: 1px solid #f0f0f0; display: flex; flex-direction: column; overflow: hidden; }
+  .panel-header { padding: 12px 16px; font-size: 14px; font-weight: 600; color: #333; border-bottom: 1px solid #f5f5f5; display: flex; align-items: center; gap: 8px; }
+  .panel-body { flex: 1; padding: 16px; overflow-y: auto; }
+  .editor { width: 100%; height: 100%; border: 1px solid #e8e8e8; border-radius: 6px; padding: 12px; font-size: 14px; line-height: 1.7; resize: none; font-family: inherit; outline: none; }
+  .editor:focus { border-color: #534AB7; }
+  .markdown-body h1 { font-size: 22px; margin: 16px 0 10px; padding-bottom: 8px; border-bottom: 2px solid #534AB7; color: #222; }
+  .markdown-body h2 { font-size: 18px; margin: 14px 0 8px; color: #333; }
+  .markdown-body h3 { font-size: 16px; margin: 10px 0 6px; color: #555; }
+  .markdown-body p { line-height: 1.8; margin: 8px 0; color: #444; }
+  .markdown-body strong { color: #534AB7; }
+  .markdown-body blockquote { border-left: 3px solid #534AB7; padding: 8px 16px; margin: 12px 0; background: #f9f7ff; border-radius: 0 6px 6px 0; color: #666; font-size: 13px; }
+  .markdown-body code { background: #f5f2ff; color: #534AB7; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+  .modal { background: #fff; border-radius: 12px; width: 600px; max-height: 80vh; overflow-y: auto; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+  .modal h2 { font-size: 18px; margin-bottom: 20px; color: #222; }
+  .modal h4 { font-size: 14px; color: #534AB7; margin: 16px 0 8px; }
+  .modal label { display: block; font-size: 13px; color: #666; margin-bottom: 4px; margin-top: 12px; }
+  .modal input, .modal select { width: 100%; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 14px; }
+  .modal input:focus, .modal select:focus { border-color: #534AB7; outline: none; }
+  .modal .btn-row { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+  .modal .btn-cancel { padding: 8px 24px; border: 1px solid #d9d9d9; border-radius: 6px; background: #fff; cursor: pointer; }
+  .modal .btn-save { padding: 8px 24px; border: none; border-radius: 6px; background: #534AB7; color: #fff; cursor: pointer; font-weight: 500; }
+  .tag { display: inline-block; background: #f0edff; color: #534AB7; font-size: 12px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1>🔮 推文工坊 · ArticleForge</h1>
+  <button onclick="document.getElementById('settings-modal').style.display='flex'">⚙️ 配置</button>
+</div>
+
+<!-- Content -->
+<div class="content">
+
+  <!-- Config Panel -->
+  <div class="config-panel">
+    <div><label>受众</label><select><option>创业者/投资人</option><option>开发者</option><option>大众</option></select></div>
+    <div><label>篇幅</label><select><option>保留深度</option><option>标准</option><option>精简</option></select></div>
+    <div><label>标题</label><select><option>悬念型</option><option>干货型</option><option>故事型</option></select></div>
+    <div><label>模型</label><select><option>GPT-4o</option><option>Claude Sonnet 4</option><option>DeepSeek V3</option></select></div>
+    <button class="btn-start">🚀 开始润色</button>
+  </div>
+
+  <!-- Step Panel -->
+  <div class="step-panel">
+    <div class="step done"> <span class="dot">✓</span> <span>① 需求确认</span></div>
+    <span class="arrow">→</span>
+    <div class="step active"> <span class="dot">2</span> <span>② 数据搜索</span></div>
+    <span class="arrow">→</span>
+    <div class="step"> <span class="dot">3</span> <span>③ 润色改写</span></div>
+    <span class="arrow">→</span>
+    <div class="step"> <span class="dot">4</span> <span>④ 质量检查</span></div>
+    <div style="margin-left:auto; font-size:13px; color:#999;">搜索到 12 条真实数据...</div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="main-grid">
+    <!-- Left: Source Editor -->
+    <div class="panel">
+      <div class="panel-header">📝 原文输入 <span class="tag">科研风格</span></div>
+      <div class="panel-body">
+        <textarea class="editor" placeholder="粘贴科研文章原文...">
+### 📊 1. 行业边界与多维覆盖
+
+- **市场环境层**：已过滤。巨头凭借资本、算力、数据垄断形成马太效应...
+        </textarea>
+      </div>
+    </div>
+
+    <!-- Right: Preview Panel -->
+    <div class="panel">
+      <div class="panel-header">👁️ 推文预览 <span class="tag">悬念型标题</span></div>
+      <div class="panel-body markdown-body">
+        <h1>Cursor 之后，AI 编程的下一个机会在哪里？</h1>
+        <p>过去一年，Vibe Coding（自然语言写代码）从极客玩具变成了巨头必争之地。</p>
+        <p>先看一组真实数据：</p>
+        <blockquote>📊 <strong>Cursor</strong>：2025 年 11 月完成 <strong>23 亿美元 D 轮融资</strong>，估值 <strong>293 亿美元</strong>。</blockquote>
+        <h2>🚨 一、为什么正面竞争没有胜算</h2>
+        <p>先把话说清楚：在"通用 AI 编程助手"这个维度上，创业公司几乎没有赢的可能。</p>
+        <h2>🎯 二、巨头的盲区：行业垂直场景</h2>
+        <p>通用模型强在"广"，弱在"深"。GPT-4 或 Claude 读过的代码库可能是你这辈子都看不完的量......</p>
+        <h2>🛡️ 三、机会一：面向安全关键系统的 AI 编程助手</h2>
+        <p>第一个机会，在<strong>安全关键领域</strong>——也就是那些"代码出错会死人"的行业。</p>
+        <p><em>（右侧面板实时渲染 Markdown，数据来源可点击查看）</em></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <h2>⚙️ 系统配置</h2>
+    <h4>🔑 API 密钥</h4>
+    <label>OpenAI API Key（留空表示不修改）</label>
+    <input type="password" placeholder="sk-..." />
+    <label>Anthropic (Claude) API Key</label>
+    <input type="password" placeholder="sk-ant-..." />
+    <label>DeepSeek API Key</label>
+    <input type="password" placeholder="sk-..." />
+    <label>Serper（搜索）API Key</label>
+    <input type="password" placeholder="..." />
+
+    <h4>🤖 模型选择</h4>
+    <label>润色改写模型</label>
+    <select><option>GPT-4o</option><option>Claude Sonnet 4</option><option>DeepSeek V3</option></select>
+    <label>搜索摘要模型（低成本）</label>
+    <select><option>DeepSeek V3</option><option>GPT-4o-mini</option></select>
+    <label>质量检查模型</label>
+    <select><option>GPT-4o</option><option>Claude Sonnet 4</option></select>
+
+    <h4>🔍 搜索配置</h4>
+    <label>最大搜索结果数</label>
+    <input type="number" value="10" />
+
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="document.getElementById('settings-modal').style.display='none'">取消</button>
+      <button class="btn-save" onclick="document.getElementById('settings-modal').style.display='none';alert('配置已保存！')">💾 保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Close modal on overlay click
+document.getElementById('settings-modal').addEventListener('click', function(e) {
+  if (e.target === this) this.style.display = 'none';
+});
+</script>
+</body>
+</html>
