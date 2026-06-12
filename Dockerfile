@@ -8,7 +8,6 @@ RUN npx vite build
 FROM node:22-alpine
 WORKDIR /app
 COPY backend/server.js ./server.js
-COPY backend/wechat-proxy.js ./wechat-proxy.js
 COPY --from=builder /app/dist /frontend/dist
 EXPOSE 80
 ENV PORT=80
